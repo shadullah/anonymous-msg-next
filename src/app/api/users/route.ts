@@ -2,6 +2,9 @@ import { sendVerificationEmail } from "@/helpers/sendVerificationEmail";
 import bcrypt from "bcryptjs";
 import dbConnect from "@/lib/dbConnect";
 import UserModel from "@/model/User";
+import jwt from "jsonwebtoken"
+
+const JWT_SECRET = process.env.JWT_SECRET||"";
 
 export async function POST(request:Request){
     await dbConnect()
@@ -66,10 +69,15 @@ export async function POST(request:Request){
                 message:emailResponse.message
             }, {status:500})
         }
+
+        const token= jwt.sign(
+            {email:email}, JWT_SECRET, {expiresIn:"1h"}
+        )
         
         return Response.json({
             success:true,
-            message:"User registered successfully!!"
+            message:"User registered successfully!!",
+            token,
         }, {status:201})
 
 
@@ -87,7 +95,7 @@ export async function POST(request:Request){
 export async function GET() {
     await dbConnect();
     try {
-        const users = await UserModel.find({}, "-password"); // Exclude passwords for security
+        const users = await UserModel.find({}, "-password");
         
         return Response.json({
             success: true,
